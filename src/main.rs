@@ -15,7 +15,13 @@ async fn main() -> std::io::Result<()> {
 
     #[derive(OpenApi)]
     #[openapi(
-        paths(healthcheck, tables::create, tables::list_all_tables, tables::get_table_by_id),
+        paths(
+            healthcheck, 
+            tables::create, 
+            tables::list_all_tables, 
+            tables::get_table_by_id, 
+            tables::update_table_by_id
+        ),
         components(schemas(models::table::Table, models::table::Table)),
         tags((name = "tables", description = "Table management endpoints"))
     )]
