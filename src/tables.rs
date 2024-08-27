@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, post, Responder, web::Data, web::Json};
+use actix_web::{HttpResponse, post, Responder, web, web::Data, web::Json};
 use chrono::Utc;
 
 use models::table::Table;
@@ -7,6 +7,7 @@ use crate::models;
 use crate::table_store::TableStore;
 
 #[utoipa::path(
+    context_path = "/api",
     request_body(content = Table, example = json!({
     "name": "table1",
     "owner": "owner1",
@@ -19,7 +20,7 @@ use crate::table_store::TableStore;
 
 )]
 #[post("/tables")]
-async fn create(db: Data<TableStore>, table: Json<Table>) -> impl Responder {
+async fn create(table: Json<Table>, db: Data<TableStore>) -> impl Responder {
     let enriched_table = enrich_table(table);
     match db.insert_table(enriched_table) {
         Ok(table) => HttpResponse::Created().json(table),
@@ -57,5 +58,12 @@ fn enrich_table(table: Json<Table>) -> Table {
 //     HttpResponse::Ok().body(response)
 // }
 //
+
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/api")
+            .service(create)
+    );
+}
 
 

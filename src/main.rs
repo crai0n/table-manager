@@ -26,8 +26,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(app_data.clone())
+            .configure(tables::config)
             .service(healthcheck)
-            .service(tables::create)
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url(
                 "/api-docs/openapi.json",
                 openapi.clone(),
