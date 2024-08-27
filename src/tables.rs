@@ -6,8 +6,6 @@ use models::table::Table;
 use crate::models;
 use crate::table_store::TableStore;
 
-const NOT_FOUND_STRING: &'static str = "Table not found";
-
 #[utoipa::path(
     context_path = "/api",
     request_body(content = Table, example = json!({
@@ -74,7 +72,7 @@ pub async fn get_table_by_id(id: web::Path<String>, db: web::Data<TableStore>) -
     context_path = "/api",
     responses(
         (status = 200, description = "Requested Table has been updated", body = Table),
-        (status = 404, description = "Table not found", body = String)
+        (status = 404, description = "Table not found")
     )
 )]
 #[put("/tables/{id}")]
@@ -82,7 +80,7 @@ pub async fn update_table_by_id(db: web::Data<TableStore>, id: web::Path<String>
     let table = db.update_table_by_id(&id, updated_table.into_inner());
     match table {
         Some(table) => HttpResponse::Ok().json(table),
-        None => HttpResponse::NotFound().body(NOT_FOUND_STRING),
+        None => HttpResponse::NotFound().finish(),
     }
 }
 
@@ -91,7 +89,7 @@ pub async fn update_table_by_id(db: web::Data<TableStore>, id: web::Path<String>
     context_path = "/api",
     responses(
         (status = 200, description = "Requested Table has been deleted", body = Table),
-        (status = 404, description = "Table not found", body = String)
+        (status = 404, description = "Table not found")
     )
 )]
 #[delete("/tables/{id}")]
@@ -99,7 +97,7 @@ pub async fn delete_table_by_id(db: web::Data<TableStore>, id: web::Path<String>
     let table = db.delete_table_by_id(&id);
     match table {
         Some(table) => HttpResponse::Ok().json(table),
-        None => HttpResponse::NotFound().body(NOT_FOUND_STRING),
+        None => HttpResponse::NotFound().finish(),
     }
 }
 
