@@ -7,10 +7,16 @@ use crate::models;
 use crate::table_store::TableStore;
 
 #[utoipa::path(
+    request_body(content = Table, example = json!({
+    "name": "table1",
+    "owner": "owner1",
+    "public": true
+    })),
     responses(
         (status = 201, description = "Returns the created resource", body = Table),
         (status = 400, description = "Bad Request", body = String)
     )
+
 )]
 #[post("/tables")]
 async fn create(db: Data<TableStore>, table: Json<Table>) -> impl Responder {
