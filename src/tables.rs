@@ -1,4 +1,4 @@
-use actix_web::{get, HttpResponse, post, put, delete, Responder, web, web::Data, web::Json};
+use actix_web::{delete, get, HttpResponse, post, put, Responder, web, web::Data, web::Json};
 use chrono::Utc;
 
 use models::table::Table;
@@ -76,14 +76,17 @@ pub async fn get_table_by_id(id: web::Path<String>, db: web::Data<TableStore>) -
     )
 )]
 #[put("/tables/{id}")]
-pub async fn update_table_by_id(db: web::Data<TableStore>, id: web::Path<String>, updated_table: web::Json<Table>) -> HttpResponse {
+pub async fn update_table_by_id(
+    db: web::Data<TableStore>,
+    id: web::Path<String>,
+    updated_table: web::Json<Table>,
+) -> HttpResponse {
     let table = db.update_table_by_id(&id, updated_table.into_inner());
     match table {
         Some(table) => HttpResponse::Ok().json(table),
         None => HttpResponse::NotFound().finish(),
     }
 }
-
 
 #[utoipa::path(
     context_path = "/api",
@@ -108,8 +111,6 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .service(list_all_tables)
             .service(get_table_by_id)
             .service(update_table_by_id)
-            .service(delete_table_by_id)
+            .service(delete_table_by_id),
     );
 }
-
-
