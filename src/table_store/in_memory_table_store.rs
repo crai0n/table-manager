@@ -2,16 +2,39 @@ use std::fmt::Error;
 use std::sync::{Arc, Mutex};
 
 use crate::models::table::{NewTable, Table};
+use crate::table_store::TableStore;
 
-#[derive(Default)]
-pub(crate) struct TableStore {
+#[derive(Default, Clone)]
+pub(crate) struct InMemoryTableStore {
     pub tables: Arc<Mutex<Vec<Table>>>,
 }
 
-impl TableStore {
+impl TableStore for InMemoryTableStore {
+    fn insert_table(&self, new_table: NewTable) -> Result<Table, Error> {
+        self.insert_table(new_table)
+    }
+
+    fn get_tables(&self) -> Vec<Table> {
+        self.get_tables()
+    }
+
+    fn get_table_by_id(&self, id: u32) -> Option<Table> {
+        self.get_table_by_id(id)
+    }
+
+    fn update_table_by_id(&self, id: u32, new_table: NewTable) -> Option<Table> {
+        self.update_table_by_id(id, new_table)
+    }
+
+    fn delete_table_by_id(&self, id: u32) -> Option<Table> {
+        self.delete_table_by_id(id)
+    }
+}
+
+impl InMemoryTableStore {
     pub fn new() -> Self {
         let tables = Arc::new(Mutex::new(vec![]));
-        TableStore { tables }
+        InMemoryTableStore { tables }
     }
 
     pub fn insert_table(&self, new_table: NewTable) -> Result<Table, Error> {

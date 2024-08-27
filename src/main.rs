@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use actix_web::{App, get, HttpResponse, HttpServer, Responder, web};
 use actix_web::middleware::Logger;
 use env_logger::{Env, Target};
@@ -5,6 +7,9 @@ use utoipa::OpenApi;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
+
+use table_store::in_memory_table_store::InMemoryTableStore;
+use table_store::TableStore;
 
 mod models;
 mod schema;
@@ -17,8 +22,7 @@ async fn main() -> std::io::Result<()> {
         .target(Target::Stdout)
         .init();
 
-    let table_db = table_store::TableStore::new();
-    let app_data = web::Data::new(table_db);
+    let store = InMemoryTableStore::new();
 
     #[derive(OpenApi)]
     #[openapi(
@@ -38,6 +42,8 @@ async fn main() -> std::io::Result<()> {
     let openapi = ApiDoc::openapi();
 
     HttpServer::new(move || {
+        let store_arc: Arc<dyn TableStore> = Arc::new(store.clone());
+        let app_data = web::Data::from(store_arc);
         App::new()
             .wrap(Logger::default())
             .app_data(app_data.clone())
