@@ -1,43 +1,22 @@
-use actix_web::{App, get, HttpResponse, HttpServer, post, Responder, web};
+use actix_web::{App, get, HttpResponse, HttpServer, Responder};
 use utoipa::OpenApi;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
-#[utoipa::path(
-    responses(
-        (status = 200, description = "Successful response", body = String)
-    ),
-    tag = "table"
-)]
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
-
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
-
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     #[derive(OpenApi)]
-    #[openapi(paths(hello))]
+    #[openapi(
+        paths(healthcheck)
+    )]
     struct ApiDoc;
 
     let openapi = ApiDoc::openapi();
 
-
     HttpServer::new(move || {
         App::new()
-            .service(hello)
-            .service(echo)
-            .route("/hey", web::get().to(manual_hello))
+            .service(healthcheck)
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url(
                 "/api-docs/openapi.json",
                 openapi.clone(),
@@ -49,3 +28,16 @@ async fn main() -> std::io::Result<()> {
         .run()
         .await
 }
+
+#[utoipa::path(
+    tag = "healthcheck",
+    responses(
+        (status = 200, description = "Everything is fine!")
+    )
+)]
+#[get("/hc")]
+async fn healthcheck() -> impl Responder {
+    HttpResponse::Ok().finish()
+}
+
+
