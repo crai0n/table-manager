@@ -44,5 +44,11 @@ impl TableStore {
         tables[index] = new_table.clone();
         Some(new_table)
     }
+
+    pub fn delete_table_by_id(&self, id: &str) -> Option<Table> {
+        let mut tables = self.tables.lock().unwrap();
+        let index = tables.iter().position(|table| table.id == Some(id.to_string()))?;
+        Some(tables.remove(index))
+    }
 }
 

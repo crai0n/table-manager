@@ -1,10 +1,12 @@
-use actix_web::{get, HttpResponse, post, put, Responder, web, web::Data, web::Json};
+use actix_web::{get, HttpResponse, post, put, delete, Responder, web, web::Data, web::Json};
 use chrono::Utc;
 
 use models::table::Table;
 
 use crate::models;
 use crate::table_store::TableStore;
+
+const NOT_FOUND_STRING: &'static str = "Table not found";
 
 #[utoipa::path(
     context_path = "/api",
@@ -80,19 +82,26 @@ pub async fn update_table_by_id(db: web::Data<TableStore>, id: web::Path<String>
     let table = db.update_table_by_id(&id, updated_table.into_inner());
     match table {
         Some(table) => HttpResponse::Ok().json(table),
-        None => HttpResponse::NotFound().body("Table not found"),
+        None => HttpResponse::NotFound().body(NOT_FOUND_STRING),
     }
 }
 
 
-
-
-// #[delete()]
-// async fn delete(id: u32) -> impl Responder {
-//     let response = format!("Removed your table: {:?}", id);
-//     HttpResponse::Ok().body(response)
-// }
-//
+#[utoipa::path(
+    context_path = "/api",
+    responses(
+        (status = 200, description = "Requested Table has been deleted", body = Table),
+        (status = 404, description = "Table not found", body = String)
+    )
+)]
+#[delete("/tables/{id}")]
+pub async fn delete_table_by_id(db: web::Data<TableStore>, id: web::Path<String>) -> HttpResponse {
+    let table = db.delete_table_by_id(&id);
+    match table {
+        Some(table) => HttpResponse::Ok().json(table),
+        None => HttpResponse::NotFound().body(NOT_FOUND_STRING),
+    }
+}
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -101,6 +110,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .service(list_all_tables)
             .service(get_table_by_id)
             .service(update_table_by_id)
+            .service(delete_table_by_id)
     );
 }
 
