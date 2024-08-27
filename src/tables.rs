@@ -1,18 +1,12 @@
 use actix_web::{delete, get, HttpResponse, post, put, Responder, web, web::Data, web::Json};
-use chrono::Utc;
 
-use models::table::Table;
+use models::table::NewTable;
 
 use crate::models;
 use crate::table_store::TableStore;
 
 #[utoipa::path(
     context_path = "/api",
-    request_body(content = Table, example = json!({
-    "name": "table1",
-    "owner": "owner1",
-    "public": true
-    })),
     responses(
         (status = 201, description = "Returns the created resource", body = Table),
         (status = 400, description = "Bad Request", body = String)
@@ -20,23 +14,10 @@ use crate::table_store::TableStore;
 
 )]
 #[post("/tables")]
-async fn create(table: Json<Table>, db: Data<TableStore>) -> impl Responder {
-    let enriched_table = enrich_table(table);
-    match db.insert_table(enriched_table) {
+async fn create_table(new_table: Json<NewTable>, db: Data<TableStore>) -> impl Responder {
+    match db.insert_table(new_table.into_inner()) {
         Ok(table) => HttpResponse::Created().json(table),
         Err(_) => HttpResponse::InternalServerError().body("Something strange happened"),
-    }
-}
-
-fn enrich_table(table: Json<Table>) -> Table {
-    let table = table.into_inner();
-    let id = uuid::Uuid::new_v4().to_string();
-    let created_at = Utc::now();
-    Table {
-        id: Some(id),
-        created_at: Some(created_at),
-        updated_at: Some(created_at),
-        ..table
     }
 }
 
@@ -60,8 +41,8 @@ pub async fn list_all_tables(db: web::Data<TableStore>) -> impl Responder {
     )
 )]
 #[get("/tables/{id}")]
-pub async fn get_table_by_id(id: web::Path<String>, db: web::Data<TableStore>) -> HttpResponse {
-    let todo = db.get_table_by_id(&id);
+pub async fn get_table_by_id(id: web::Path<u32>, db: web::Data<TableStore>) -> HttpResponse {
+    let todo = db.get_table_by_id(id.into_inner());
     match todo {
         Some(todo) => HttpResponse::Ok().json(todo),
         None => HttpResponse::NotFound().finish(),
@@ -78,10 +59,10 @@ pub async fn get_table_by_id(id: web::Path<String>, db: web::Data<TableStore>) -
 #[put("/tables/{id}")]
 pub async fn update_table_by_id(
     db: web::Data<TableStore>,
-    id: web::Path<String>,
-    updated_table: web::Json<Table>,
+    id: web::Path<u32>,
+    updated_table: web::Json<NewTable>,
 ) -> HttpResponse {
-    let table = db.update_table_by_id(&id, updated_table.into_inner());
+    let table = db.update_table_by_id(id.into_inner(), updated_table.into_inner());
     match table {
         Some(table) => HttpResponse::Ok().json(table),
         None => HttpResponse::NotFound().finish(),
@@ -96,8 +77,8 @@ pub async fn update_table_by_id(
     )
 )]
 #[delete("/tables/{id}")]
-pub async fn delete_table_by_id(db: web::Data<TableStore>, id: web::Path<String>) -> HttpResponse {
-    let table = db.delete_table_by_id(&id);
+pub async fn delete_table_by_id(db: web::Data<TableStore>, id: web::Path<u32>) -> HttpResponse {
+    let table = db.delete_table_by_id(id.into_inner());
     match table {
         Some(table) => HttpResponse::Ok().json(table),
         None => HttpResponse::NotFound().finish(),
@@ -107,7 +88,7 @@ pub async fn delete_table_by_id(db: web::Data<TableStore>, id: web::Path<String>
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
-            .service(create)
+            .service(create_table)
             .service(list_all_tables)
             .service(get_table_by_id)
             .service(update_table_by_id)
