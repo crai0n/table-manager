@@ -1,15 +1,21 @@
 use actix_web::{App, get, HttpResponse, HttpServer, Responder, web};
+use actix_web::middleware::Logger;
+use env_logger::{Env, Target};
 use utoipa::OpenApi;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
+mod models;
 mod table_store;
 mod tables;
-mod models;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::Builder::from_env(Env::default())
+        .target(Target::Stdout)
+        .init();
+
     let table_db = table_store::TableStore::new();
     let app_data = web::Data::new(table_db);
 
@@ -32,19 +38,19 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(app_data.clone())
             .configure(tables::config)
             .service(healthcheck)
-            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url(
-                "/api-docs/openapi.json",
-                openapi.clone(),
-            ))
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
+            )
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(Scalar::with_url("/scalar", openapi.clone()))
     })
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }
 
 #[utoipa::path(
@@ -57,5 +63,3 @@ async fn main() -> std::io::Result<()> {
 async fn healthcheck() -> impl Responder {
     HttpResponse::Ok().finish()
 }
-
-
