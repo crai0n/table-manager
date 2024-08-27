@@ -8,11 +8,8 @@ use crate::schema::*;
 #[diesel(table_name = bridge_tables)]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
 pub struct Table {
-    #[schema(example = 1)]
     pub id: u32,
-    #[schema(example = "tablename")]
     pub name: String,
-    #[schema(example = "tableowner")]
     pub owner: String,
     pub public: bool,
 }
@@ -25,9 +22,7 @@ pub struct Table {
     "public": true
     }))]
 pub struct NewTable {
-    #[schema(example = "table1")]
     pub name: String,
-    #[schema(example = "me")]
     pub owner: String,
     pub public: bool,
 }
