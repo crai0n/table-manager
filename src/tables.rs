@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, post, Responder, web, web::Data, web::Json};
+use actix_web::{get, HttpResponse, post, Responder, web, web::Data, web::Json};
 use chrono::Utc;
 
 use models::table::Table;
@@ -40,18 +40,36 @@ fn enrich_table(table: Json<Table>) -> Table {
     }
 }
 
-// #[get("/")]
-// async fn list_all_tables() -> impl Responder {
-//     let response = format!("Displaying your table: {:?}", id);
-//     HttpResponse::Ok().body(response)
-// }
-//
-// #[get("/tables")]
-// async fn list_all_tables(id: u32) -> impl Responder {
-//     let response = format!("Displaying your table: {:?}", id);
-//     HttpResponse::Ok().body(response)
-// }
-//
+#[utoipa::path(
+    context_path = "/api",
+    responses(
+        (status = 200, description = "Lists all tables", body = Table)
+    )
+)]
+#[get("/tables")]
+pub async fn list_all_tables(db: web::Data<TableStore>) -> impl Responder {
+    let tables = db.get_tables();
+    HttpResponse::Ok().json(tables)
+}
+
+#[utoipa::path(
+    context_path = "/api",
+    responses(
+        (status = 200, description = "Provides the requested Table", body = Table),
+        (status = 404, description = "Table not found")
+    )
+)]
+#[get("/tables/{id}")]
+pub async fn get_table_by_id(id: web::Path<String>, db: web::Data<TableStore>) -> HttpResponse {
+    let todo = db.get_table_by_id(&id);
+    match todo {
+        Some(todo) => HttpResponse::Ok().json(todo),
+        None => HttpResponse::NotFound().finish(),
+    }
+}
+
+
+
 // #[delete()]
 // async fn delete(id: u32) -> impl Responder {
 //     let response = format!("Removed your table: {:?}", id);
@@ -63,6 +81,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
             .service(create)
+            .service(list_all_tables)
+            .service(get_table_by_id)
     );
 }
 

@@ -19,5 +19,15 @@ impl TableStore {
         tables.push(table.clone());
         Ok(table)
     }
+
+    pub fn get_tables(&self) -> Vec<Table> {
+        let tables = self.tables.lock().unwrap();
+        tables.clone()
+    }
+
+    pub fn get_table_by_id(&self, id: &str) -> Option<Table> {
+        let tables = self.tables.lock().unwrap();
+        tables.iter().find(|table| table.id == Some(id.to_string())).cloned()
+    }
 }
 
