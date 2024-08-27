@@ -1,14 +1,23 @@
-use actix_web::{App, get, HttpResponse, HttpServer, Responder};
+use actix_web::{App, get, HttpResponse, HttpServer, Responder, web};
 use utoipa::OpenApi;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
+mod table_store;
+mod tables;
+mod models;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let table_db = table_store::TableStore::new();
+    let app_data = web::Data::new(table_db);
+
     #[derive(OpenApi)]
     #[openapi(
-        paths(healthcheck)
+        paths(healthcheck, tables::create),
+        components(schemas(models::table::Table, models::table::Table)),
+        tags((name = "tables", description = "Table management endpoints"))
     )]
     struct ApiDoc;
 
@@ -16,7 +25,9 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .app_data(app_data.clone())
             .service(healthcheck)
+            .service(tables::create)
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url(
                 "/api-docs/openapi.json",
                 openapi.clone(),

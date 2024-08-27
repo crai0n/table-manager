@@ -9,3 +9,6 @@ utoipa = { version = "4.2.3", features = ["actix_extras"] }
 utoipa-redoc = { version = "4.0.0", features = ["actix-web"] }
 utoipa-scalar = { version = "0.1.0", features = ["actix-web"] }
 utoipa-swagger-ui = { version = "7.1.0", features = ["actix-web"] }
+chrono = { version = "0.4.38", features = ["serde"] }
+uuid = { version = "1.10.0", features = ["v4"] }
+serde = { version = "1.0.209", features = ["derive"] }
