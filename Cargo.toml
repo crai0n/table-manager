@@ -17,3 +17,4 @@ env_logger = "0.11.5"
 log = "0.4.22"
 diesel = { version = "2.2.3", default-features = false, features = ["mysql"] }
 rand = "0.8.5"
+dotenvy = "0.15.7"
