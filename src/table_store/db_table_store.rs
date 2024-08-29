@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use std::env;
 use std::ops::DerefMut;
 
@@ -17,8 +18,9 @@ pub struct DbTableStore {
     pool: Pool<ConnectionManager<MysqlConnection>>,
 }
 
+#[async_trait]
 impl TableStore for DbTableStore {
-    fn insert_bridge_table(
+    async fn insert_bridge_table(
         &self,
         new_bridge_table: NewBridgeTable,
     ) -> Result<BridgeTable, TableStoreError> {
@@ -26,15 +28,15 @@ impl TableStore for DbTableStore {
             .map_err(|err| TableStoreError::DieselError(err))
     }
 
-    fn get_bridge_tables(&self) -> Vec<BridgeTable> {
+    async fn get_bridge_tables(&self) -> Vec<BridgeTable> {
         self.get_bridge_tables()
     }
 
-    fn get_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
+    async fn get_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
         self.get_bridge_table_by_id(table_id)
     }
 
-    fn update_bridge_table_by_id(
+    async fn update_bridge_table_by_id(
         &self,
         table_id: u32,
         new_bridge_table: NewBridgeTable,
@@ -42,7 +44,7 @@ impl TableStore for DbTableStore {
         self.update_bridge_table_by_id(table_id, new_bridge_table)
     }
 
-    fn delete_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
+    async fn delete_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
         self.delete_bridge_table_by_id(table_id)
     }
 }

@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
 
 use crate::models::bridge_table::{BridgeTable, NewBridgeTable};
@@ -8,23 +9,24 @@ pub(crate) struct InMemoryTableStore {
     pub tables: Arc<Mutex<Vec<BridgeTable>>>,
 }
 
+#[async_trait]
 impl TableStore for InMemoryTableStore {
-    fn insert_bridge_table(
+    async fn insert_bridge_table(
         &self,
         new_bridge_table: NewBridgeTable,
     ) -> Result<BridgeTable, TableStoreError> {
         Ok(self.insert_bridge_table(new_bridge_table))
     }
 
-    fn get_bridge_tables(&self) -> Vec<BridgeTable> {
+    async fn get_bridge_tables(&self) -> Vec<BridgeTable> {
         self.get_bridge_tables()
     }
 
-    fn get_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable> {
+    async fn get_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable> {
         self.get_bridge_table_by_id(id)
     }
 
-    fn update_bridge_table_by_id(
+    async fn update_bridge_table_by_id(
         &self,
         id: u32,
         new_bridge_table: NewBridgeTable,
@@ -32,7 +34,7 @@ impl TableStore for InMemoryTableStore {
         self.update_bridge_table_by_id(id, new_bridge_table)
     }
 
-    fn delete_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable> {
+    async fn delete_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable> {
         self.delete_bridge_table_by_id(id)
     }
 }
