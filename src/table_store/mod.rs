@@ -2,7 +2,7 @@ use diesel::result::Error as DieselError;
 
 use crate::models::bridge_table::{BridgeTable, NewBridgeTable};
 
-mod db_table_store;
+pub mod db_table_store;
 pub mod in_memory_table_store;
 
 pub trait TableStore {

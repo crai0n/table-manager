@@ -11,7 +11,8 @@ use crate::schema::bridge_tables;
 use crate::schema::bridge_tables::dsl::*;
 use crate::table_store::{TableStore, TableStoreError};
 
-struct DbTableStore {
+#[derive(Clone)]
+pub struct DbTableStore {
     connection: Arc<Mutex<MysqlConnection>>,
 }
 

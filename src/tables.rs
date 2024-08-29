@@ -1,4 +1,4 @@
-use actix_web::{delete, get, HttpResponse, post, put, Responder, web, web::Data, web::Json};
+use actix_web::{delete, get, post, put, web, web::Data, web::Json, HttpResponse, Responder};
 
 use models::bridge_table::NewBridgeTable;
 
@@ -8,7 +8,7 @@ use crate::table_store::TableStore;
 #[utoipa::path(
     context_path = "/api",
     responses(
-        (status = 201, description = "Returns the created resource", body = Table),
+        (status = 201, description = "Returns the created resource", body = BridgeTable),
         (status = 400, description = "Bad Request", body = String)
     )
 
@@ -27,7 +27,7 @@ async fn create_bridge_table(
 #[utoipa::path(
     context_path = "/api",
     responses(
-        (status = 200, description = "Lists all tables", body = Table)
+        (status = 200, description = "Lists all tables", body = BridgeTable)
     )
 )]
 #[get("/tables")]
@@ -39,7 +39,7 @@ pub async fn list_all_bridge_tables(db: web::Data<dyn TableStore>) -> impl Respo
 #[utoipa::path(
     context_path = "/api",
     responses(
-        (status = 200, description = "Provides the requested Table", body = Table),
+        (status = 200, description = "Provides the requested Table", body = BridgeTable),
         (status = 404, description = "Table not found")
     )
 )]
@@ -58,7 +58,7 @@ pub async fn get_bridge_table_by_id(
 #[utoipa::path(
     context_path = "/api",
     responses(
-        (status = 200, description = "Requested Table has been updated", body = Table),
+        (status = 200, description = "Requested Table has been updated", body = BridgeTable),
         (status = 404, description = "Table not found")
     )
 )]
@@ -78,7 +78,7 @@ pub async fn update_bridge_table_by_id(
 #[utoipa::path(
     context_path = "/api",
     responses(
-        (status = 200, description = "Requested Table has been deleted", body = Table),
+        (status = 200, description = "Requested Table has been deleted", body = BridgeTable),
         (status = 404, description = "Table not found")
     )
 )]

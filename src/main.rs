@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
-use actix_web::{App, get, HttpResponse, HttpServer, Responder, web};
 use actix_web::middleware::Logger;
+use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use env_logger::{Env, Target};
 use utoipa::OpenApi;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
+use table_store::db_table_store::DbTableStore;
 use table_store::in_memory_table_store::InMemoryTableStore;
 use table_store::TableStore;
 
