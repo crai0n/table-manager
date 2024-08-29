@@ -9,7 +9,6 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
 use table_store::db_table_store::DbTableStore;
-use table_store::in_memory_table_store::InMemoryTableStore;
 use table_store::TableStore;
 
 mod models;
@@ -23,7 +22,6 @@ async fn main() -> std::io::Result<()> {
         .target(Target::Stdout)
         .init();
 
-    // let store = InMemoryTableStore::new();
     let store = DbTableStore::new();
 
     #[derive(OpenApi)]

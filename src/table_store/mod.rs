@@ -3,6 +3,7 @@ use diesel::result::Error as DieselError;
 use crate::models::bridge_table::{BridgeTable, NewBridgeTable};
 
 pub mod db_table_store;
+#[allow(dead_code)]
 pub mod in_memory_table_store;
 
 pub trait TableStore {
@@ -20,6 +21,7 @@ pub trait TableStore {
     fn delete_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable>;
 }
 
+#[allow(dead_code)]
 #[non_exhaustive]
 pub enum TableStoreError {
     DieselError(DieselError),

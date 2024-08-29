@@ -1,8 +1,9 @@
 use std::env;
 use std::ops::DerefMut;
-use std::sync::{Arc, Mutex};
 
 use diesel::prelude::*;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
 use diesel::result::Error;
 use dotenvy::dotenv;
 
@@ -13,7 +14,7 @@ use crate::table_store::{TableStore, TableStoreError};
 
 #[derive(Clone)]
 pub struct DbTableStore {
-    connection: Arc<Mutex<MysqlConnection>>,
+    pool: Pool<ConnectionManager<MysqlConnection>>,
 }
 
 impl TableStore for DbTableStore {
@@ -48,15 +49,16 @@ impl TableStore for DbTableStore {
 
 impl DbTableStore {
     pub fn new() -> Self {
-        let connection = Arc::new(Mutex::new(establish_connection()));
-        DbTableStore { connection }
+        let pool = get_connection_pool();
+        DbTableStore { pool }
     }
 
     pub fn insert_bridge_table(
         &self,
         new_bridge_table: NewBridgeTable,
     ) -> Result<BridgeTable, Error> {
-        let mut connection = self.connection.lock().unwrap();
+        let connection = &mut self.pool.get().unwrap();
+
         connection.transaction(|conn| {
             diesel::insert_into(bridge_tables::table)
                 .values(&new_bridge_table)
@@ -70,7 +72,7 @@ impl DbTableStore {
     }
 
     pub fn get_bridge_tables(&self) -> Vec<BridgeTable> {
-        let mut connection = self.connection.lock().unwrap();
+        let connection = &mut self.pool.get().unwrap();
         bridge_tables
             .filter(public.eq(true))
             .limit(5)
@@ -80,7 +82,7 @@ impl DbTableStore {
     }
 
     pub fn get_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
-        let mut connection = self.connection.lock().unwrap();
+        let connection = &mut self.pool.get().unwrap();
         bridge_tables
             .find(table_id)
             .select(BridgeTable::as_select())
@@ -94,7 +96,7 @@ impl DbTableStore {
         table_id: u32,
         new_bridge_table: NewBridgeTable,
     ) -> Option<BridgeTable> {
-        let mut connection = self.connection.lock().unwrap();
+        let connection = &mut self.pool.get().unwrap();
         connection
             .transaction(|connection| {
                 diesel::update(bridge_tables.find(table_id))
@@ -113,7 +115,7 @@ impl DbTableStore {
     }
 
     pub fn delete_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
-        let mut connection = self.connection.lock().unwrap();
+        let connection = &mut self.pool.get().unwrap();
         connection
             .transaction(|connection| {
                 let bridge_table = bridge_tables
@@ -130,12 +132,16 @@ impl DbTableStore {
     }
 }
 
-fn establish_connection() -> MysqlConnection {
+fn get_connection_pool() -> Pool<ConnectionManager<MysqlConnection>> {
     dotenv().ok();
 
-    let database_url = env::var("MYSQL_DATABASE_URL")
+    let url = env::var("MYSQL_DATABASE_URL")
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set");
-    MysqlConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+    let manager = ConnectionManager::<MysqlConnection>::new(url);
+
+    Pool::builder()
+        .test_on_check_out(true)
+        .build(manager)
+        .expect("Could not build connection pool")
 }
