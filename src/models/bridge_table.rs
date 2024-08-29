@@ -7,7 +7,7 @@ use crate::schema::*;
 #[derive(Queryable, Selectable, Debug, Serialize, Deserialize, ToSchema, Clone)]
 #[diesel(table_name = bridge_tables)]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
-pub struct Table {
+pub struct BridgeTable {
     pub id: u32,
     pub name: String,
     pub owner: String,
@@ -21,7 +21,7 @@ pub struct Table {
     "owner": "owner1",
     "public": true
     }))]
-pub struct NewTable {
+pub struct NewBridgeTable {
     pub name: String,
     pub owner: String,
     pub public: bool,

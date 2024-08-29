@@ -1,6 +1,6 @@
 use actix_web::{delete, get, HttpResponse, post, put, Responder, web, web::Data, web::Json};
 
-use models::table::NewTable;
+use models::bridge_table::NewBridgeTable;
 
 use crate::models;
 use crate::table_store::TableStore;
@@ -14,8 +14,11 @@ use crate::table_store::TableStore;
 
 )]
 #[post("/tables")]
-async fn create_table(new_table: Json<NewTable>, db: Data<dyn TableStore>) -> impl Responder {
-    match db.insert_table(new_table.into_inner()) {
+async fn create_bridge_table(
+    new_bridge_table: Json<NewBridgeTable>,
+    db: Data<dyn TableStore>,
+) -> impl Responder {
+    match db.insert_bridge_table(new_bridge_table.into_inner()) {
         Ok(table) => HttpResponse::Created().json(table),
         Err(_) => HttpResponse::InternalServerError().body("Something strange happened"),
     }
@@ -28,8 +31,8 @@ async fn create_table(new_table: Json<NewTable>, db: Data<dyn TableStore>) -> im
     )
 )]
 #[get("/tables")]
-pub async fn list_all_tables(db: web::Data<dyn TableStore>) -> impl Responder {
-    let tables = db.get_tables();
+pub async fn list_all_bridge_tables(db: web::Data<dyn TableStore>) -> impl Responder {
+    let tables = db.get_bridge_tables();
     HttpResponse::Ok().json(tables)
 }
 
@@ -41,8 +44,11 @@ pub async fn list_all_tables(db: web::Data<dyn TableStore>) -> impl Responder {
     )
 )]
 #[get("/tables/{id}")]
-pub async fn get_table_by_id(id: web::Path<u32>, db: web::Data<dyn TableStore>) -> HttpResponse {
-    let todo = db.get_table_by_id(id.into_inner());
+pub async fn get_bridge_table_by_id(
+    id: web::Path<u32>,
+    db: web::Data<dyn TableStore>,
+) -> HttpResponse {
+    let todo = db.get_bridge_table_by_id(id.into_inner());
     match todo {
         Some(todo) => HttpResponse::Ok().json(todo),
         None => HttpResponse::NotFound().finish(),
@@ -57,12 +63,12 @@ pub async fn get_table_by_id(id: web::Path<u32>, db: web::Data<dyn TableStore>) 
     )
 )]
 #[put("/tables/{id}")]
-pub async fn update_table_by_id(
+pub async fn update_bridge_table_by_id(
     db: web::Data<dyn TableStore>,
     id: web::Path<u32>,
-    updated_table: web::Json<NewTable>,
+    updated_bridge_table: web::Json<NewBridgeTable>,
 ) -> HttpResponse {
-    let table = db.update_table_by_id(id.into_inner(), updated_table.into_inner());
+    let table = db.update_bridge_table_by_id(id.into_inner(), updated_bridge_table.into_inner());
     match table {
         Some(table) => HttpResponse::Ok().json(table),
         None => HttpResponse::NotFound().finish(),
@@ -77,8 +83,11 @@ pub async fn update_table_by_id(
     )
 )]
 #[delete("/tables/{id}")]
-pub async fn delete_table_by_id(db: web::Data<dyn TableStore>, id: web::Path<u32>) -> HttpResponse {
-    let table = db.delete_table_by_id(id.into_inner());
+pub async fn delete_bridge_table_by_id(
+    db: web::Data<dyn TableStore>,
+    id: web::Path<u32>,
+) -> HttpResponse {
+    let table = db.delete_bridge_table_by_id(id.into_inner());
     match table {
         Some(table) => HttpResponse::Ok().json(table),
         None => HttpResponse::NotFound().finish(),
@@ -88,10 +97,10 @@ pub async fn delete_table_by_id(db: web::Data<dyn TableStore>, id: web::Path<u32
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
-            .service(create_table)
-            .service(list_all_tables)
-            .service(get_table_by_id)
-            .service(update_table_by_id)
-            .service(delete_table_by_id),
+            .service(create_bridge_table)
+            .service(list_all_bridge_tables)
+            .service(get_bridge_table_by_id)
+            .service(update_bridge_table_by_id)
+            .service(delete_bridge_table_by_id),
     );
 }

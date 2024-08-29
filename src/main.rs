@@ -28,13 +28,13 @@ async fn main() -> std::io::Result<()> {
     #[openapi(
         paths(
             healthcheck,
-            tables::create_table,
-            tables::list_all_tables,
-            tables::get_table_by_id,
-            tables::update_table_by_id,
-            tables::delete_table_by_id,
+            tables::create_bridge_table,
+            tables::list_all_bridge_tables,
+            tables::get_bridge_table_by_id,
+            tables::update_bridge_table_by_id,
+            tables::delete_bridge_table_by_id,
         ),
-        components(schemas(models::table::Table, models::table::NewTable)),
+        components(schemas(models::bridge_table::BridgeTable, models::bridge_table::NewBridgeTable)),
         tags((name = "tables", description = "Table management endpoints"))
     )]
     struct ApiDoc;

@@ -1,13 +1,18 @@
 use std::fmt::Error;
 
-use crate::models::table::{NewTable, Table};
+use crate::models::bridge_table::{BridgeTable, NewBridgeTable};
 
+mod db_table_store;
 pub mod in_memory_table_store;
 
 pub trait TableStore {
-    fn insert_table(&self, new_table: NewTable) -> Result<Table, Error>;
-    fn get_tables(&self) -> Vec<Table>;
-    fn get_table_by_id(&self, id: u32) -> Option<Table>;
-    fn update_table_by_id(&self, id: u32, new_table: NewTable) -> Option<Table>;
-    fn delete_table_by_id(&self, id: u32) -> Option<Table>;
+    fn insert_bridge_table(&self, new_bridge_table: NewBridgeTable) -> Result<BridgeTable, Error>;
+    fn get_bridge_tables(&self) -> Vec<BridgeTable>;
+    fn get_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable>;
+    fn update_bridge_table_by_id(
+        &self,
+        id: u32,
+        new_bridge_table: NewBridgeTable,
+    ) -> Option<BridgeTable>;
+    fn delete_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable>;
 }
