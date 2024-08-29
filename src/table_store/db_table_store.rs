@@ -28,25 +28,38 @@ impl TableStore for DbTableStore {
             .map_err(TableStoreError::DieselError)
     }
 
-    async fn get_bridge_tables(&self) -> Vec<BridgeTable> {
-        self.get_bridge_tables().await
+    async fn get_bridge_tables(&self) -> Result<Vec<BridgeTable>, TableStoreError> {
+        self.get_bridge_tables()
+            .await
+            .map_err(TableStoreError::DieselError)
     }
 
-    async fn get_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
-        self.get_bridge_table_by_id(table_id).await
+    async fn get_bridge_table_by_id(
+        &self,
+        table_id: u32,
+    ) -> Result<Option<BridgeTable>, TableStoreError> {
+        self.get_bridge_table_by_id(table_id)
+            .await
+            .map_err(TableStoreError::DieselError)
     }
 
     async fn update_bridge_table_by_id(
         &self,
         table_id: u32,
         new_bridge_table: NewBridgeTable,
-    ) -> Option<BridgeTable> {
+    ) -> Result<Option<BridgeTable>, TableStoreError> {
         self.update_bridge_table_by_id(table_id, new_bridge_table)
             .await
+            .map_err(TableStoreError::DieselError)
     }
 
-    async fn delete_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
-        self.delete_bridge_table_by_id(table_id).await
+    async fn delete_bridge_table_by_id(
+        &self,
+        table_id: u32,
+    ) -> Result<Option<BridgeTable>, TableStoreError> {
+        self.delete_bridge_table_by_id(table_id)
+            .await
+            .map_err(TableStoreError::DieselError)
     }
 }
 
@@ -76,31 +89,32 @@ impl DbTableStore {
         })
     }
 
-    pub async fn get_bridge_tables(&self) -> Vec<BridgeTable> {
+    pub async fn get_bridge_tables(&self) -> Result<Vec<BridgeTable>, Error> {
         let connection = &mut self.pool.get().unwrap();
         bridge_tables
             .filter(public.eq(true))
             .limit(5)
             .select(BridgeTable::as_select())
             .load::<BridgeTable>(connection)
-            .expect("Error loading tables")
     }
 
-    pub async fn get_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
+    pub async fn get_bridge_table_by_id(
+        &self,
+        table_id: u32,
+    ) -> Result<Option<BridgeTable>, Error> {
         let connection = &mut self.pool.get().unwrap();
         bridge_tables
             .find(table_id)
             .select(BridgeTable::as_select())
             .first(connection)
             .optional()
-            .unwrap_or_else(|_| panic!("An error occurred while fetching post {}", table_id))
     }
 
     pub async fn update_bridge_table_by_id(
         &self,
         table_id: u32,
         new_bridge_table: NewBridgeTable,
-    ) -> Option<BridgeTable> {
+    ) -> Result<Option<BridgeTable>, Error> {
         let connection = &mut self.pool.get().unwrap();
         connection
             .transaction(|connection| {
@@ -116,10 +130,12 @@ impl DbTableStore {
                 Ok(bridge_table)
             })
             .optional()
-            .unwrap_or_else(|_| panic!("An error occurred while fetching post {}", table_id))
     }
 
-    pub async fn delete_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
+    pub async fn delete_bridge_table_by_id(
+        &self,
+        table_id: u32,
+    ) -> Result<Option<BridgeTable>, Error> {
         let connection = &mut self.pool.get().unwrap();
         connection
             .transaction(|connection| {
@@ -133,7 +149,6 @@ impl DbTableStore {
                 Ok(bridge_table)
             })
             .optional()
-            .unwrap_or_else(|_| panic!("An error occurred while fetching post {}", table_id))
     }
 }
 

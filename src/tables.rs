@@ -19,29 +19,35 @@ async fn create_bridge_table(
     new_bridge_table: Json<NewBridgeTable>,
     db: Data<dyn TableStore>,
 ) -> impl Responder {
-    match db.insert_bridge_table(new_bridge_table.into_inner()).await {
+    let table = db.insert_bridge_table(new_bridge_table.into_inner()).await;
+    match table {
         Ok(table) => HttpResponse::Created().json(table),
-        Err(_) => HttpResponse::InternalServerError().body("Something strange happened"),
+        Err(_) => HttpResponse::InternalServerError().body("Error in TableStore"),
     }
 }
 
 #[utoipa::path(
     context_path = "/api",
     responses(
-        (status = 200, description = "Lists all tables", body = BridgeTable)
+        (status = 200, description = "Lists all tables", body = BridgeTable),
+        (status = 500, description = "Internal Server Error", body = String),
     )
 )]
 #[get("/tables")]
 pub async fn list_all_bridge_tables(db: web::Data<dyn TableStore>) -> impl Responder {
     let tables = db.get_bridge_tables().await;
-    HttpResponse::Ok().json(tables)
+    match tables {
+        Ok(tables) => HttpResponse::Ok().json(tables),
+        Err(_) => HttpResponse::InternalServerError().body("Error in TableStore"),
+    }
 }
 
 #[utoipa::path(
     context_path = "/api",
     responses(
         (status = 200, description = "Provides the requested Table", body = BridgeTable),
-        (status = 404, description = "Table not found")
+        (status = 404, description = "Table not found"),
+        (status = 500, description = "Internal Server Error", body = String),
     )
 )]
 #[get("/tables/{id}")]
@@ -49,10 +55,11 @@ pub async fn get_bridge_table_by_id(
     id: web::Path<u32>,
     db: web::Data<dyn TableStore>,
 ) -> HttpResponse {
-    let todo = db.get_bridge_table_by_id(id.into_inner());
-    match todo.await {
-        Some(todo) => HttpResponse::Ok().json(todo),
-        None => HttpResponse::NotFound().finish(),
+    let table = db.get_bridge_table_by_id(id.into_inner()).await;
+    match table {
+        Ok(Some(table)) => HttpResponse::Ok().json(table),
+        Ok(None) => HttpResponse::NotFound().finish(),
+        Err(_) => HttpResponse::InternalServerError().body("Error in TableStore"),
     }
 }
 
@@ -69,10 +76,13 @@ pub async fn update_bridge_table_by_id(
     id: web::Path<u32>,
     updated_bridge_table: web::Json<NewBridgeTable>,
 ) -> HttpResponse {
-    let table = db.update_bridge_table_by_id(id.into_inner(), updated_bridge_table.into_inner());
-    match table.await {
-        Some(table) => HttpResponse::Ok().json(table),
-        None => HttpResponse::NotFound().finish(),
+    let table = db
+        .update_bridge_table_by_id(id.into_inner(), updated_bridge_table.into_inner())
+        .await;
+    match table {
+        Ok(Some(table)) => HttpResponse::Ok().json(table),
+        Ok(None) => HttpResponse::NotFound().finish(),
+        Err(_) => HttpResponse::InternalServerError().body("Error in TableStore"),
     }
 }
 
@@ -88,10 +98,11 @@ pub async fn delete_bridge_table_by_id(
     db: web::Data<dyn TableStore>,
     id: web::Path<u32>,
 ) -> HttpResponse {
-    let table = db.delete_bridge_table_by_id(id.into_inner());
-    match table.await {
-        Some(table) => HttpResponse::Ok().json(table),
-        None => HttpResponse::NotFound().finish(),
+    let table = db.delete_bridge_table_by_id(id.into_inner()).await;
+    match table {
+        Ok(Some(table)) => HttpResponse::Ok().json(table),
+        Ok(None) => HttpResponse::NotFound().finish(),
+        Err(_) => HttpResponse::InternalServerError().body("Error in TableStore"),
     }
 }
 

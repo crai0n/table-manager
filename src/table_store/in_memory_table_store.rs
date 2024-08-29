@@ -18,24 +18,30 @@ impl TableStore for InMemoryTableStore {
         Ok(self.insert_bridge_table(new_bridge_table))
     }
 
-    async fn get_bridge_tables(&self) -> Vec<BridgeTable> {
-        self.get_bridge_tables()
+    async fn get_bridge_tables(&self) -> Result<Vec<BridgeTable>, TableStoreError> {
+        Ok(self.get_bridge_tables())
     }
 
-    async fn get_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable> {
-        self.get_bridge_table_by_id(id)
+    async fn get_bridge_table_by_id(
+        &self,
+        id: u32,
+    ) -> Result<Option<BridgeTable>, TableStoreError> {
+        Ok(self.get_bridge_table_by_id(id))
     }
 
     async fn update_bridge_table_by_id(
         &self,
         id: u32,
         new_bridge_table: NewBridgeTable,
-    ) -> Option<BridgeTable> {
-        self.update_bridge_table_by_id(id, new_bridge_table)
+    ) -> Result<Option<BridgeTable>, TableStoreError> {
+        Ok(self.update_bridge_table_by_id(id, new_bridge_table))
     }
 
-    async fn delete_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable> {
-        self.delete_bridge_table_by_id(id)
+    async fn delete_bridge_table_by_id(
+        &self,
+        id: u32,
+    ) -> Result<Option<BridgeTable>, TableStoreError> {
+        Ok(self.delete_bridge_table_by_id(id))
     }
 }
 

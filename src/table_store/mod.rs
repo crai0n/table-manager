@@ -13,14 +13,18 @@ pub trait TableStore {
         &self,
         new_bridge_table: NewBridgeTable,
     ) -> Result<BridgeTable, TableStoreError>;
-    async fn get_bridge_tables(&self) -> Vec<BridgeTable>;
-    async fn get_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable>;
+    async fn get_bridge_tables(&self) -> Result<Vec<BridgeTable>, TableStoreError>;
+    async fn get_bridge_table_by_id(&self, id: u32)
+        -> Result<Option<BridgeTable>, TableStoreError>;
     async fn update_bridge_table_by_id(
         &self,
         id: u32,
         new_bridge_table: NewBridgeTable,
-    ) -> Option<BridgeTable>;
-    async fn delete_bridge_table_by_id(&self, id: u32) -> Option<BridgeTable>;
+    ) -> Result<Option<BridgeTable>, TableStoreError>;
+    async fn delete_bridge_table_by_id(
+        &self,
+        id: u32,
+    ) -> Result<Option<BridgeTable>, TableStoreError>;
 }
 
 #[allow(dead_code)]
