@@ -23,7 +23,8 @@ async fn main() -> std::io::Result<()> {
         .target(Target::Stdout)
         .init();
 
-    let store = InMemoryTableStore::new();
+    // let store = InMemoryTableStore::new();
+    let store = DbTableStore::new();
 
     #[derive(OpenApi)]
     #[openapi(
