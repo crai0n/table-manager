@@ -14,7 +14,7 @@ pub struct BridgeTable {
     pub public: bool,
 }
 
-#[derive(Insertable, Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Insertable, Debug, Serialize, Deserialize, ToSchema, Clone, AsChangeset)]
 #[diesel(table_name = bridge_tables)]
 #[schema(example = json!({
     "name": "table1",

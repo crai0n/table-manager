@@ -1,8 +1,7 @@
-use std::fmt::Error;
 use std::sync::{Arc, Mutex};
 
 use crate::models::bridge_table::{BridgeTable, NewBridgeTable};
-use crate::table_store::TableStore;
+use crate::table_store::{TableStore, TableStoreError};
 
 #[derive(Default, Clone)]
 pub(crate) struct InMemoryTableStore {
@@ -10,8 +9,11 @@ pub(crate) struct InMemoryTableStore {
 }
 
 impl TableStore for InMemoryTableStore {
-    fn insert_bridge_table(&self, new_bridge_table: NewBridgeTable) -> Result<BridgeTable, Error> {
-        self.insert_bridge_table(new_bridge_table)
+    fn insert_bridge_table(
+        &self,
+        new_bridge_table: NewBridgeTable,
+    ) -> Result<BridgeTable, TableStoreError> {
+        Ok(self.insert_bridge_table(new_bridge_table))
     }
 
     fn get_bridge_tables(&self) -> Vec<BridgeTable> {
@@ -41,10 +43,7 @@ impl InMemoryTableStore {
         InMemoryTableStore { tables }
     }
 
-    pub fn insert_bridge_table(
-        &self,
-        new_bridge_table: NewBridgeTable,
-    ) -> Result<BridgeTable, Error> {
+    pub fn insert_bridge_table(&self, new_bridge_table: NewBridgeTable) -> BridgeTable {
         let mut tables = self.tables.lock().unwrap();
         let id = rand::random();
         let table = BridgeTable {
@@ -54,7 +53,7 @@ impl InMemoryTableStore {
             public: new_bridge_table.public,
         };
         tables.push(table.clone());
-        Ok(table)
+        table
     }
 
     pub fn get_bridge_tables(&self) -> Vec<BridgeTable> {
