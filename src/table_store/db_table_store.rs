@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use std::env;
-use std::ops::DerefMut;
 
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
@@ -25,15 +24,16 @@ impl TableStore for DbTableStore {
         new_bridge_table: NewBridgeTable,
     ) -> Result<BridgeTable, TableStoreError> {
         self.insert_bridge_table(new_bridge_table)
-            .map_err(|err| TableStoreError::DieselError(err))
+            .await
+            .map_err(TableStoreError::DieselError)
     }
 
     async fn get_bridge_tables(&self) -> Vec<BridgeTable> {
-        self.get_bridge_tables()
+        self.get_bridge_tables().await
     }
 
     async fn get_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
-        self.get_bridge_table_by_id(table_id)
+        self.get_bridge_table_by_id(table_id).await
     }
 
     async fn update_bridge_table_by_id(
@@ -42,20 +42,21 @@ impl TableStore for DbTableStore {
         new_bridge_table: NewBridgeTable,
     ) -> Option<BridgeTable> {
         self.update_bridge_table_by_id(table_id, new_bridge_table)
+            .await
     }
 
     async fn delete_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
-        self.delete_bridge_table_by_id(table_id)
+        self.delete_bridge_table_by_id(table_id).await
     }
 }
 
 impl DbTableStore {
-    pub fn new() -> Self {
-        let pool = get_connection_pool();
+    pub async fn new() -> Self {
+        let pool = get_connection_pool().await;
         DbTableStore { pool }
     }
 
-    pub fn insert_bridge_table(
+    pub async fn insert_bridge_table(
         &self,
         new_bridge_table: NewBridgeTable,
     ) -> Result<BridgeTable, Error> {
@@ -66,34 +67,36 @@ impl DbTableStore {
                 .values(&new_bridge_table)
                 .execute(conn)?;
 
-            bridge_tables::table
+            let bridge_table = bridge_tables::table
                 .order(bridge_tables::id.desc())
                 .select(BridgeTable::as_select())
-                .first(conn)
+                .first(conn)?;
+
+            Ok(bridge_table)
         })
     }
 
-    pub fn get_bridge_tables(&self) -> Vec<BridgeTable> {
+    pub async fn get_bridge_tables(&self) -> Vec<BridgeTable> {
         let connection = &mut self.pool.get().unwrap();
         bridge_tables
             .filter(public.eq(true))
             .limit(5)
             .select(BridgeTable::as_select())
-            .load::<BridgeTable>(connection.deref_mut())
+            .load::<BridgeTable>(connection)
             .expect("Error loading tables")
     }
 
-    pub fn get_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
+    pub async fn get_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
         let connection = &mut self.pool.get().unwrap();
         bridge_tables
             .find(table_id)
             .select(BridgeTable::as_select())
-            .first(connection.deref_mut())
+            .first(connection)
             .optional()
-            .expect("Error loading table")
+            .unwrap_or_else(|_| panic!("An error occurred while fetching post {}", table_id))
     }
 
-    pub fn update_bridge_table_by_id(
+    pub async fn update_bridge_table_by_id(
         &self,
         table_id: u32,
         new_bridge_table: NewBridgeTable,
@@ -113,10 +116,10 @@ impl DbTableStore {
                 Ok(bridge_table)
             })
             .optional()
-            .unwrap_or_else(|_: diesel::result::Error| panic!("Unable to find post {}", table_id))
+            .unwrap_or_else(|_| panic!("An error occurred while fetching post {}", table_id))
     }
 
-    pub fn delete_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
+    pub async fn delete_bridge_table_by_id(&self, table_id: u32) -> Option<BridgeTable> {
         let connection = &mut self.pool.get().unwrap();
         connection
             .transaction(|connection| {
@@ -130,11 +133,11 @@ impl DbTableStore {
                 Ok(bridge_table)
             })
             .optional()
-            .unwrap_or_else(|_: diesel::result::Error| panic!("Unable to find post {}", table_id))
+            .unwrap_or_else(|_| panic!("An error occurred while fetching post {}", table_id))
     }
 }
 
-fn get_connection_pool() -> Pool<ConnectionManager<MysqlConnection>> {
+async fn get_connection_pool() -> Pool<ConnectionManager<MysqlConnection>> {
     dotenv().ok();
 
     let url = env::var("MYSQL_DATABASE_URL")

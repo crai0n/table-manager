@@ -9,7 +9,8 @@ use crate::table_store::TableStore;
     context_path = "/api",
     responses(
         (status = 201, description = "Returns the created resource", body = BridgeTable),
-        (status = 400, description = "Bad Request", body = String)
+        (status = 400, description = "Bad Request", body = String),
+        (status = 500, description = "Internal Server Error", body = String),
     )
 
 )]

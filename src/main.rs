@@ -22,7 +22,7 @@ async fn main() -> std::io::Result<()> {
         .target(Target::Stdout)
         .init();
 
-    let store = DbTableStore::new();
+    let store = DbTableStore::new().await;
 
     #[derive(OpenApi)]
     #[openapi(
