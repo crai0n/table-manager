@@ -22,8 +22,6 @@ async fn main() -> std::io::Result<()> {
         .target(Target::Stdout)
         .init();
 
-    let store = DbTableStore::new().await;
-
     #[derive(OpenApi)]
     #[openapi(
         paths(
@@ -41,9 +39,11 @@ async fn main() -> std::io::Result<()> {
 
     let openapi = ApiDoc::openapi();
 
+    let store = DbTableStore::new().await;
+    let store_arc = Arc::new(store) as Arc<dyn TableStore + Send + Sync>;
+    let app_data = web::Data::from(store_arc);
+
     HttpServer::new(move || {
-        let store_arc: Arc<dyn TableStore> = Arc::new(store.clone());
-        let app_data = web::Data::from(store_arc);
         App::new()
             .wrap(Logger::default())
             .app_data(app_data.clone())

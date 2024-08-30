@@ -17,7 +17,7 @@ use crate::table_store::TableStore;
 #[post("/tables")]
 async fn create_bridge_table(
     new_bridge_table: Json<NewBridgeTable>,
-    db: Data<dyn TableStore>,
+    db: Data<dyn TableStore + Send + Sync>,
 ) -> impl Responder {
     let table = db.insert_bridge_table(new_bridge_table.into_inner()).await;
     match table {
@@ -34,7 +34,7 @@ async fn create_bridge_table(
     )
 )]
 #[get("/tables")]
-pub async fn list_all_bridge_tables(db: web::Data<dyn TableStore>) -> impl Responder {
+pub async fn list_all_bridge_tables(db: web::Data<dyn TableStore + Send + Sync>) -> impl Responder {
     let tables = db.get_bridge_tables().await;
     match tables {
         Ok(tables) => HttpResponse::Ok().json(tables),
@@ -53,7 +53,7 @@ pub async fn list_all_bridge_tables(db: web::Data<dyn TableStore>) -> impl Respo
 #[get("/tables/{id}")]
 pub async fn get_bridge_table_by_id(
     id: web::Path<u32>,
-    db: web::Data<dyn TableStore>,
+    db: web::Data<dyn TableStore + Send + Sync>,
 ) -> HttpResponse {
     let table = db.get_bridge_table_by_id(id.into_inner()).await;
     match table {
@@ -72,7 +72,7 @@ pub async fn get_bridge_table_by_id(
 )]
 #[put("/tables/{id}")]
 pub async fn update_bridge_table_by_id(
-    db: web::Data<dyn TableStore>,
+    db: web::Data<dyn TableStore + Send + Sync>,
     id: web::Path<u32>,
     updated_bridge_table: web::Json<NewBridgeTable>,
 ) -> HttpResponse {
@@ -95,7 +95,7 @@ pub async fn update_bridge_table_by_id(
 )]
 #[delete("/tables/{id}")]
 pub async fn delete_bridge_table_by_id(
-    db: web::Data<dyn TableStore>,
+    db: web::Data<dyn TableStore + Send + Sync>,
     id: web::Path<u32>,
 ) -> HttpResponse {
     let table = db.delete_bridge_table_by_id(id.into_inner()).await;
