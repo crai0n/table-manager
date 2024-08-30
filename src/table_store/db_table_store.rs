@@ -2,9 +2,13 @@ use async_trait::async_trait;
 use std::env;
 
 use diesel::prelude::*;
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
 use diesel::result::Error;
+use diesel_async::pooled_connection::bb8::Pool;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::scoped_futures::ScopedFutureExt;
+use diesel_async::RunQueryDsl;
+use diesel_async::{AsyncConnection, AsyncMysqlConnection};
+
 use dotenvy::dotenv;
 
 use crate::models::bridge_table::{BridgeTable, NewBridgeTable};
@@ -14,7 +18,7 @@ use crate::table_store::{TableStore, TableStoreError};
 
 #[derive(Clone)]
 pub struct DbTableStore {
-    pool: Pool<ConnectionManager<MysqlConnection>>,
+    pool: Pool<AsyncMysqlConnection>,
 }
 
 #[async_trait]
@@ -73,40 +77,49 @@ impl DbTableStore {
         &self,
         new_bridge_table: NewBridgeTable,
     ) -> Result<BridgeTable, Error> {
-        let connection = &mut self.pool.get().unwrap();
+        let connection = &mut self.pool.get().await.unwrap();
 
-        connection.transaction(|conn| {
-            diesel::insert_into(bridge_tables::table)
-                .values(&new_bridge_table)
-                .execute(conn)?;
+        connection
+            .transaction(|conn| {
+                async move {
+                    diesel::insert_into(bridge_tables::table)
+                        .values(&new_bridge_table)
+                        .execute(conn)
+                        .await?;
 
-            let bridge_table = bridge_tables::table
-                .order(bridge_tables::id.desc())
-                .select(BridgeTable::as_select())
-                .first(conn)?;
+                    let bridge_table = bridge_tables::table
+                        .order(bridge_tables::id.desc())
+                        .select(BridgeTable::as_select())
+                        .first(conn)
+                        .await?;
 
-            Ok(bridge_table)
-        })
+                    Ok(bridge_table)
+                }
+                .scope_boxed()
+            })
+            .await
     }
 
     pub async fn get_bridge_tables(&self) -> Result<Vec<BridgeTable>, Error> {
-        let connection = &mut self.pool.get().unwrap();
+        let connection = &mut self.pool.get().await.unwrap();
         bridge_tables
             .filter(public.eq(true))
             .limit(5)
             .select(BridgeTable::as_select())
             .load::<BridgeTable>(connection)
+            .await
     }
 
     pub async fn get_bridge_table_by_id(
         &self,
         table_id: u32,
     ) -> Result<Option<BridgeTable>, Error> {
-        let connection = &mut self.pool.get().unwrap();
+        let connection = &mut self.pool.get().await.unwrap();
         bridge_tables
             .find(table_id)
             .select(BridgeTable::as_select())
             .first(connection)
+            .await
             .optional()
     }
 
@@ -115,20 +128,26 @@ impl DbTableStore {
         table_id: u32,
         new_bridge_table: NewBridgeTable,
     ) -> Result<Option<BridgeTable>, Error> {
-        let connection = &mut self.pool.get().unwrap();
+        let connection = &mut self.pool.get().await.unwrap();
         connection
             .transaction(|connection| {
-                diesel::update(bridge_tables.find(table_id))
-                    .set(new_bridge_table)
-                    .execute(connection)?;
+                async move {
+                    diesel::update(bridge_tables.find(table_id))
+                        .set(new_bridge_table)
+                        .execute(connection)
+                        .await?;
 
-                let bridge_table = bridge_tables
-                    .find(table_id)
-                    .select(BridgeTable::as_select())
-                    .first(connection)?;
+                    let bridge_table = bridge_tables
+                        .find(table_id)
+                        .select(BridgeTable::as_select())
+                        .first(connection)
+                        .await?;
 
-                Ok(bridge_table)
+                    Ok(bridge_table)
+                }
+                .scope_boxed()
             })
+            .await
             .optional()
     }
 
@@ -136,32 +155,41 @@ impl DbTableStore {
         &self,
         table_id: u32,
     ) -> Result<Option<BridgeTable>, Error> {
-        let connection = &mut self.pool.get().unwrap();
+        let connection = &mut self.pool.get().await.unwrap();
         connection
             .transaction(|connection| {
-                let bridge_table = bridge_tables
-                    .find(table_id)
-                    .select(BridgeTable::as_select())
-                    .first(connection)?;
+                async move {
+                    let bridge_table = bridge_tables
+                        .find(table_id)
+                        .select(BridgeTable::as_select())
+                        .first(connection)
+                        .await?;
 
-                diesel::delete(bridge_tables.filter(id.eq(table_id))).execute(connection)?;
+                    diesel::delete(bridge_tables.filter(id.eq(table_id)))
+                        .execute(connection)
+                        .await?;
 
-                Ok(bridge_table)
+                    Ok(bridge_table)
+                }
+                .scope_boxed()
             })
+            .await
             .optional()
     }
 }
 
-async fn get_connection_pool() -> Pool<ConnectionManager<MysqlConnection>> {
+async fn get_connection_pool() -> Pool<AsyncMysqlConnection> {
     dotenv().ok();
 
     let url = env::var("MYSQL_DATABASE_URL")
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set");
-    let manager = ConnectionManager::<MysqlConnection>::new(url);
+
+    let manager = AsyncDieselConnectionManager::<AsyncMysqlConnection>::new(url);
 
     Pool::builder()
         .test_on_check_out(true)
         .build(manager)
+        .await
         .expect("Could not build connection pool")
 }
