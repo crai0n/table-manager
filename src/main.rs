@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
 
     let openapi = ApiDoc::openapi();
 
-    let store = DbTableStore::new().await;
+    let store = DbTableStore::new();
     let store_arc = Arc::new(store) as Arc<dyn TableStore + Send + Sync>;
     let app_data = web::Data::from(store_arc);
 

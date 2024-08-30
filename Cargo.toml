@@ -18,5 +18,5 @@ log = "0.4.22"
 diesel = { version = "2.2.3", default-features = false }
 rand = "0.8.5"
 dotenvy = "0.15.7"
-diesel-async = { version = "0.5.0", features = ["bb8", "mysql"] }
+diesel-async = { version = "0.5.0", features = ["deadpool", "mysql"] }
 async-trait = "0.1.81"

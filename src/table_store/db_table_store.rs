@@ -3,7 +3,7 @@ use std::env;
 
 use diesel::prelude::*;
 use diesel::result::Error;
-use diesel_async::pooled_connection::bb8::Pool;
+use diesel_async::pooled_connection::deadpool::Pool;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::scoped_futures::ScopedFutureExt;
 use diesel_async::RunQueryDsl;
@@ -68,8 +68,8 @@ impl TableStore for DbTableStore {
 }
 
 impl DbTableStore {
-    pub async fn new() -> Self {
-        let pool = get_connection_pool().await;
+    pub fn new() -> Self {
+        let pool = get_connection_pool();
         DbTableStore { pool }
     }
 
@@ -178,7 +178,7 @@ impl DbTableStore {
     }
 }
 
-async fn get_connection_pool() -> Pool<AsyncMysqlConnection> {
+fn get_connection_pool() -> Pool<AsyncMysqlConnection> {
     dotenv().ok();
 
     let url = env::var("MYSQL_DATABASE_URL")
@@ -187,9 +187,7 @@ async fn get_connection_pool() -> Pool<AsyncMysqlConnection> {
 
     let manager = AsyncDieselConnectionManager::<AsyncMysqlConnection>::new(url);
 
-    Pool::builder()
-        .test_on_check_out(true)
-        .build(manager)
-        .await
+    Pool::builder(manager)
+        .build()
         .expect("Could not build connection pool")
 }
